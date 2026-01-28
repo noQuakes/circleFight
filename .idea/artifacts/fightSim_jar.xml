@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact name="fightSim:jar">
+    <output-path>$USER_HOME$/Desktop/fightSim</output-path>
+    <root id="root">
+      <element id="archive" name="fightSim.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+        </element>
+        <element id="module-output" name="fightSim" />
+      </element>
+    </root>
+  </artifact>
+</component>
