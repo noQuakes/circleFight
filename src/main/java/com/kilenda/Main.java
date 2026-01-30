@@ -11,11 +11,14 @@ import com.kilenda.FighterHandler;
 import static com.sun.java.accessibility.util.AWTEventMonitor.addMouseMotionListener;
 
 public class Main {
-    static int fps = 24;
+    static int fps = 48;
     static int frameDelay = 1000 / fps;
     static int tickN = 0;
     static FighterHandler handler;
+    static Boolean mouseEntityEnabled = true;
     static Thrower mouseEntity;
+    static int targetX;
+    static int targetY;
 
     static double findPointAngle (double dx, double dy){
         double hyp = Math.sqrt(dx * dx + dy * dy);
@@ -36,17 +39,12 @@ public class Main {
 
     public static void main(String[] args) {
 
-        JFrame frame = new JFrame("tTEst Simulatr");
+        JFrame frame = new JFrame("Test Simulator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         BattleArenaPanel arenaPanel = new BattleArenaPanel();
         handler = new FighterHandler(arenaPanel);
         frame.add(arenaPanel);
         frame.pack();
-        /*for (int i = 1; i < 5; i++){
-            handler.spawnRandomNPC();
-        }
-        handler.spawnTeam(3);
-        handler.spawnTeam(3);*/
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -68,7 +66,7 @@ public class Main {
         mouseEntity.inGame = true;
         BattleArenaPanel.entities.add(mouseEntity);*/
 
-        mouseEntity = (Thrower) handler.getRandomNPC();
+        /*mouseEntity = (Thrower) handler.getRandomNPC();
         mouseEntity.inGame = true;
         mouseEntity.name = "Hero";
         mouseEntity.team = 8333;
@@ -79,32 +77,32 @@ public class Main {
         mouseEntity.throwPower = 65;
         mouseEntity.maxHealth = 1800;
         mouseEntity.health = 1800;
-        handler.spawnTeam(30, 8333);
+        handler.spawnTeam(30, 8333);*/
+        if (mouseEntityEnabled){
+            mouseEntity = (Thrower) handler.getRandomNPC();
 
-        mouseEntity.moveBySelf = false;
 
-        arenaPanel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent e) {
-                if (Main.mouseEntity != null) {
-                    mouseEntity.pointTowards(e.getX(), e.getY());
-                    if (mouseEntity.findDistance(e.getX(), e.getY()) > mouseEntity.size * 0.5){
-                        mouseEntity.moveForward();
+            mouseEntity.moveBySelf = false;
+
+            arenaPanel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+                @Override
+                public void mouseMoved(java.awt.event.MouseEvent e) {
+                    targetX = e.getX();
+                    targetY = e.getY();
+                }
+            });
+
+
+            arenaPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    if (Main.mouseEntity != null) {
+                        mouseEntity.throwProjectile();
                     }
+
                 }
-            }
-
-        });
-
-        arenaPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (Main.mouseEntity != null) {
-                    mouseEntity.throwProjectile();
-                }
-
-            }
-        });
+            });
+        }
 
 
 
@@ -147,51 +145,6 @@ class BattleArenaPanel extends JPanel {
 
 
     public BattleArenaPanel() {
-        /*int armorSteps = 50;
-        int totalColumns = 10; // full grid
-        int perRow = 8;         // 8 NPCs per row (middle 8)
-        int rowSpacing = 150;
-
-        for (int i = 0; i <= armorSteps; i++) {
-            double armorLevel = (double) i / armorSteps;
-
-            int columnInRow = i % perRow; // 0–7 for 8 NPCs
-            int row = i / perRow;
-
-            // map to original 10-slot positions, skipping first and last
-            int column = columnInRow + 1; // now column 1–8 (slot 0 and 9 empty)
-
-            double xLevel = (double) column / (totalColumns - 1); // 1/9 … 8/9
-            double scaledX = xLevel * canvasWidth;
-
-            Thrower npc = new Thrower(
-                    (int) scaledX,
-                    canvasHeight / 8 + row * rowSpacing,
-                    Color.BLUE
-            );
-            float hue = (float) (armorLevel * 4.0/6.0);
-            Color defenseColor = Color.getHSBColor(hue, 1.0f, 1.0f);
-            npc.name = "Armor " + (int) (armorLevel * 100) + "%";
-            npc.team = (int) (Math.random() * 10000);
-            npc.moveBySelf = true;
-            npc.renderName = true;
-            npc.facingAngleDegrees = 180;
-            npc.maxHealth = 1000;
-            npc.health = 1000;
-            npc.color = defenseColor;
-            npc.defense = 1000;
-            npc.defenseEffectiveness = armorLevel;
-            npc.applicableForce = 0.5;
-            npc.weight = 1;
-            npc.regen = 0.1;
-            npc.throwPower = 30;
-            npc.anchored = false;
-
-            entities.add(npc);
-        } /*
-
-
-
 
 
         /*setPreferredSize(new Dimension(canvasWidth, canvasHeight));
@@ -318,7 +271,7 @@ class BattleArenaPanel extends JPanel {
         entities.removeAll(toRemove);
         toAdd.clear();
         toRemove.clear();
-        if (Main.mouseEntity == null || Main.mouseEntity.deletable) {
+        if (Main.mouseEntity == null || Main.mouseEntity.deletable && Main.mouseEntityEnabled) {
             Thrower newHost = null;
             for (Entity e : entities) {
                 if (e instanceof Thrower t && !t.deletable && t.health > 0) {
@@ -333,6 +286,12 @@ class BattleArenaPanel extends JPanel {
             } else {
                 Main.mouseEntity = null;
             }
+        } else if (Main.mouseEntity != null){
+            Main.mouseEntity.pointTowards(Main.targetX, Main.targetY);
+            if (Main.mouseEntity.findDistance(Main.targetX, Main.targetY) > Main. mouseEntity.size * 0.5) {
+                Main.mouseEntity.moveForward();
+            }
+
         }
     }
 
@@ -370,7 +329,7 @@ class Entity {
 
     Boolean deletable = false;
 
-    static double globalFriction = 0.7; // 0 no move, 1 no friction, >1 antifriction
+    static double globalFriction = 0.65; // 0 no move, 1 no friction, >1 antifriction
     static double airborneFriction = 0.97; // for projectiles
 
     public Entity(int x, int y, Color color) {
