@@ -271,7 +271,7 @@ class BattleArenaPanel extends JPanel {
         entities.removeAll(toRemove);
         toAdd.clear();
         toRemove.clear();
-        if (Main.mouseEntity == null || Main.mouseEntity.deletable && Main.mouseEntityEnabled) {
+        if ((Main.mouseEntity == null || Main.mouseEntity.deletable) && Main.mouseEntityEnabled) {
             Thrower newHost = null;
             for (Entity e : entities) {
                 if (e instanceof Thrower t && !t.deletable && t.health > 0) {
