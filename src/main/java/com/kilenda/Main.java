@@ -11,7 +11,7 @@ import com.kilenda.FighterHandler;
 import static com.sun.java.accessibility.util.AWTEventMonitor.addMouseMotionListener;
 
 public class Main {
-    static int fps = 48;
+    static int fps = 24;
     static int frameDelay = 1000 / fps;
     static int tickN = 0;
     static FighterHandler handler;
@@ -19,7 +19,7 @@ public class Main {
 
     static double findPointAngle (double dx, double dy){
         double hyp = Math.sqrt(dx * dx + dy * dy);
-        double absoluteAngle = Math.asin(Math.abs(dy) / hyp);
+        double absoluteAngle = Math.toDegrees(Math.asin(Math.abs(dy) / hyp));
         double theta = 0;
 
         if (dx > 0 && dy > 0){
@@ -70,7 +70,17 @@ public class Main {
 
         mouseEntity = (Thrower) handler.getRandomNPC();
         mouseEntity.inGame = true;
-        handler.addModifiers(mouseEntity, 99.5);
+        mouseEntity.name = "Hero";
+        mouseEntity.team = 8333;
+        mouseEntity.defenseEffectiveness = 0.75;
+        mouseEntity.defense = 3500;
+        mouseEntity.applicableForce = 10;
+        mouseEntity.weight = 10;
+        mouseEntity.throwPower = 65;
+        mouseEntity.maxHealth = 1800;
+        mouseEntity.health = 1800;
+        handler.spawnTeam(30, 8333);
+
         mouseEntity.moveBySelf = false;
 
         arenaPanel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
@@ -137,6 +147,53 @@ class BattleArenaPanel extends JPanel {
 
 
     public BattleArenaPanel() {
+        /*int armorSteps = 50;
+        int totalColumns = 10; // full grid
+        int perRow = 8;         // 8 NPCs per row (middle 8)
+        int rowSpacing = 150;
+
+        for (int i = 0; i <= armorSteps; i++) {
+            double armorLevel = (double) i / armorSteps;
+
+            int columnInRow = i % perRow; // 0–7 for 8 NPCs
+            int row = i / perRow;
+
+            // map to original 10-slot positions, skipping first and last
+            int column = columnInRow + 1; // now column 1–8 (slot 0 and 9 empty)
+
+            double xLevel = (double) column / (totalColumns - 1); // 1/9 … 8/9
+            double scaledX = xLevel * canvasWidth;
+
+            Thrower npc = new Thrower(
+                    (int) scaledX,
+                    canvasHeight / 8 + row * rowSpacing,
+                    Color.BLUE
+            );
+            float hue = (float) (armorLevel * 4.0/6.0);
+            Color defenseColor = Color.getHSBColor(hue, 1.0f, 1.0f);
+            npc.name = "Armor " + (int) (armorLevel * 100) + "%";
+            npc.team = (int) (Math.random() * 10000);
+            npc.moveBySelf = true;
+            npc.renderName = true;
+            npc.facingAngleDegrees = 180;
+            npc.maxHealth = 1000;
+            npc.health = 1000;
+            npc.color = defenseColor;
+            npc.defense = 1000;
+            npc.defenseEffectiveness = armorLevel;
+            npc.applicableForce = 0.5;
+            npc.weight = 1;
+            npc.regen = 0.1;
+            npc.throwPower = 30;
+            npc.anchored = false;
+
+            entities.add(npc);
+        } /*
+
+
+
+
+
         /*setPreferredSize(new Dimension(canvasWidth, canvasHeight));
         Thrower red = new Thrower(300,300, Color.RED);
         red.name = "Red The OG";
@@ -248,6 +305,7 @@ class BattleArenaPanel extends JPanel {
                 continue;
             }
             if(unit instanceof Humanoid h){
+                //h.takeDamage(0.25);
                 globalPower = globalPower + h.globalPowerValue;
                 humanoidsInGame = humanoidsInGame + 1;
             }
@@ -296,6 +354,7 @@ class BattleArenaPanel extends JPanel {
 
 class Entity {
     Boolean airborne = false;
+    Boolean anchored = false;
     double x;
     double y;
     double weight = 1;
@@ -321,6 +380,12 @@ class Entity {
     }
 
     public void update() {
+        if (this.anchored){
+            xAxisSpeed = 0;
+            xAxisForce = 0;
+            yAxisSpeed = 0;
+            yAxisForce = 0;
+        }
         xAxisSpeed = xAxisSpeed + xAxisForce / weight;
         yAxisSpeed = yAxisSpeed + yAxisForce / weight;
 
@@ -386,13 +451,15 @@ class Entity {
                 double overlapSum = (this.size / 2 + e.size / 2);
                 double rawOverlap = overlapSum - distance;
                 double normalizedOverlap = 0;
+
+
                 if (rawOverlap > 0) {
                     normalizedOverlap = rawOverlap / overlapSum;
                 }
 
                 double totalWeight = this.weight + e.weight;
                 double eGeneralSpeed = Math.sqrt(e.xAxisSpeed * e.xAxisSpeed + e.yAxisSpeed * e.yAxisSpeed);
-                double pushThis = e.weight * eGeneralSpeed * normalizedOverlap * 10; //(e.weight / totalWeight) * overlap * totalWeight;
+                double pushThis = e.weight * eGeneralSpeed * normalizedOverlap * 3; //(e.weight / totalWeight) * overlap * totalWeight;
 
 
                 if (e instanceof Projectile p && this instanceof Humanoid h) {
@@ -434,7 +501,7 @@ class Entity {
     }
     public void reflect(){
 
-        facingAngleDegrees = Math.toDegrees(Main.findPointAngle(yAxisSpeed, xAxisSpeed));
+        facingAngleDegrees = Main.findPointAngle(xAxisSpeed, yAxisSpeed);
         if (facingAngleDegrees < 0) facingAngleDegrees = facingAngleDegrees + 360;
         if (this instanceof Projectile){
             ((Projectile) this).takeDamage(125);
@@ -467,7 +534,7 @@ class Entity {
     public void pointTowards(int x, int y){
         double xSide = x - this.x;
         double ySide = y - this.y;
-        this.facingAngleDegrees = Math.toDegrees(Main.findPointAngle(xSide, ySide));
+        this.facingAngleDegrees = Main.findPointAngle(xSide, ySide);
     }
 }
 
@@ -588,7 +655,7 @@ class Projectile extends Entity{
         this.parent = parent;
         this.size = 35;
         this.projectileInitialSpeed = force;
-        this.weight = 1;
+        this.weight = 0.5;
         this.airborne = true;
         this.facingAngleDegrees = parent.facingAngleDegrees;
         double theta = Math.toRadians(parent.facingAngleDegrees);
